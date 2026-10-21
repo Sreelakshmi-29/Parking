@@ -5,22 +5,25 @@ import { useParking } from "../context/ParkingContext.jsx";
 function SlotDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { slots } = useParking();
+  const { slots, locations } = useParking();
   const slot = slots.find((s) => s.id === Number(id));
 
   if (!slot) {
     return (
       <div className="page container">
         <h1>Slot not found</h1>
-        <Link to="/slots" className="btn">Back to slots</Link>
+        <Link to="/locations" className="btn">Back to locations</Link>
       </div>
     );
   }
+
+  const location = locations.find((l) => l.id === slot.locationId);
 
   return (
     <div className="page container">
       <h1>Slot {slot.zone}-{slot.id}</h1>
       <div className="card" style={{ maxWidth: 480 }}>
+        <p><strong>Location:</strong> {location?.name}</p>
         <p><strong>Zone:</strong> {slot.zone}</p>
         <p><strong>Vehicle type:</strong> {slot.type}</p>
         <p><strong>Rate:</strong> ₹{slot.hourlyRate} per hour</p>

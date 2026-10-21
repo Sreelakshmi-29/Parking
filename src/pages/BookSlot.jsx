@@ -15,8 +15,8 @@ const toMinutes = (t) => {
 function BookSlot() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { slots, bookSlot } = useParking();
-  const slot = slots.find((s) => s.id === Number(id));
+const { slots, bookSlot, locations } = useParking(); 
+ const slot = slots.find((s) => s.id === Number(id));
 
   const [form, setForm] = useState({
     name: "",
@@ -97,8 +97,10 @@ function BookSlot() {
 
   return (
     <div className="page container">
-      <h1>Book Slot {slot.zone}-{slot.id}</h1>
-
+<h1>Book Slot {slot.zone}-{slot.id}</h1>
+<p className="muted" style={{ marginBottom: 16 }}>
+  📍 {locations.find((l) => l.id === slot.locationId)?.name}
+</p>
       {submitted && (
         <div className="success-msg">Booking confirmed! Redirecting to your bookings...</div>
       )}

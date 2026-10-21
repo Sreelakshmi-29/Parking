@@ -11,7 +11,7 @@ function Navbar() {
         </Link>
         <ul className="nav-links">
           <li><NavLink to="/" end>Home</NavLink></li>
-          <li><NavLink to="/slots">Slots</NavLink></li>
+          <li><NavLink to="/locations">Locations</NavLink></li>
           <li>
             <NavLink to="/bookings">
               My Bookings {bookings.length > 0 && `(${bookings.length})`}

@@ -17,8 +17,7 @@ function Home() {
               Real-time slot availability for cars, bikes and EVs. Reserve ahead
               and skip the circling.
             </p>
-            <Link to="/slots" className="btn btn-accent">Browse Slots</Link>
-          </div>
+            <Link to="/locations" className="btn btn-accent">Choose Location</Link>          </div>
           <Clock label="Live parking time" />
         </div>
       </section>

@@ -1,27 +1,43 @@
-// Module 4: Lists and Keys
+// Module 4: Lists, Keys, and Router parameters (locationId)
 import { useState } from "react";
+import { useParams, Link } from "react-router-dom";
 import SlotCard from "../components/SlotCard.jsx";
 import { useParking } from "../context/ParkingContext.jsx";
 
 const FILTERS = ["All", "Car", "Bike", "EV"];
 
 function Slots() {
-  const { slots } = useParking();
+  const { locationId } = useParams();
+  const { slots, locations } = useParking();
   const [filter, setFilter] = useState("All");
   const [onlyFree, setOnlyFree] = useState(false);
 
-  const visible = slots.filter(
+  const location = locations.find((l) => l.id === locationId);
+
+  if (!location) {
+    return (
+      <div className="page container">
+        <h1>Location not found</h1>
+        <Link to="/locations" className="btn">Back to locations</Link>
+      </div>
+    );
+  }
+
+  const locationSlots = slots.filter((s) => s.locationId === locationId);
+  const visible = locationSlots.filter(
     (s) => (filter === "All" || s.type === filter) && (!onlyFree || !s.occupied)
   );
 
   return (
     <div className="page container">
-      <h1>Parking Slots</h1>
+      <Link to="/locations" className="back-link">← All locations</Link>
+      <h1>{location.icon} {location.name}</h1>
+      <p className="muted" style={{ marginBottom: 24 }}>{location.area}</p>
 
       <div className="toolbar">
         {FILTERS.map((f) => (
           <button
-            key={f} /* key helps React track each item between renders */
+            key={f}
             className={`chip ${filter === f ? "active" : ""}`}
             onClick={() => setFilter(f)}
           >
@@ -42,7 +58,6 @@ function Slots() {
         <p>No slots match your filters.</p>
       ) : (
         <div className="slots-grid">
-          {/* Use a stable unique id as key - NOT the array index */}
           {visible.map((slot) => (
             <SlotCard key={slot.id} slot={slot} />
           ))}
