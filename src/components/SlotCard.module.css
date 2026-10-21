@@ -1,0 +1,17 @@
+/* Module 4: CSS Modules - class names are scoped to this component */
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  border-top: 5px solid #16a34a;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform 0.15s;
+}
+.card:hover { transform: translateY(-4px); }
+.occupied { border-top-color: #dc2626; opacity: 0.85; }
+.title { font-size: 1.2rem; font-weight: 700; }
+.meta { color: #64748b; font-size: 0.9rem; }
+.actions { display: flex; gap: 8px; margin-top: 8px; }
