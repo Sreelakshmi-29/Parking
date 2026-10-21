@@ -4,9 +4,8 @@ import StatCard from "../components/StatCard.jsx";
 import { useParking } from "../context/ParkingContext.jsx";
 
 function Home() {
-  const { slots, bookings } = useParking();
+  const { slots } = useParking();
   const available = slots.filter((s) => !s.occupied).length;
-  const revenue = bookings.reduce((sum, b) => sum + b.total, 0);
 
   return (
     <>
@@ -29,7 +28,6 @@ function Home() {
           <StatCard label="Total Slots" value={slots.length} />
           <StatCard label="Available" value={available} color="#16a34a" />
           <StatCard label="Occupied" value={slots.length - available} color="#dc2626" />
-          <StatCard label="Revenue (₹)" value={revenue} color="#f59e0b" />
         </div>
       </div>
     </>

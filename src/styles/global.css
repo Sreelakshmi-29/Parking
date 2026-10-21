@@ -99,3 +99,7 @@ a { color: inherit; text-decoration: none; }
   .hero { padding: 40px 0; }
   .nav-links { gap: 12px; font-size: .9rem; }
 }
+
+/* Start / end time side by side */
+.time-row { display: flex; gap: 16px; }
+.time-row .field { flex: 1; }

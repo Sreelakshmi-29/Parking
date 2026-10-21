@@ -21,8 +21,9 @@ function Bookings() {
               <div>
                 <strong>Slot #{b.slotId}</strong> · {b.vehicleNumber}
                 <br />
-                <small>{b.name} · {b.hours}h · ₹{b.total} · {b.createdAt}</small>
-              </div>
+                  <small>
+                    {b.name} · {b.date} · {b.startTime} to {b.endTime} ({b.hours}h) · ₹{b.total}
+                  </small>              </div>
               <button className="btn btn-danger" onClick={() => cancelBooking(b.id)}>
                 Cancel
               </button>
