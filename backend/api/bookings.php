@@ -9,59 +9,31 @@ function timeToMinutes(string $time): int {
 }
 
 if ($method === "GET") {
-    $userId = $_SESSION["user_id"] ?? null;
-    if ($userId) {
-        $stmt = $pdo->prepare("
-            SELECT
-                b.booking_id AS id,
-                b.slot_id AS slotId,
-                s.parking_location_id AS locationId,
-                b.customer_name AS name,
-                v.vehicle_number AS vehicleNumber,
-                b.booking_date AS date,
-                TIME_FORMAT(b.start_time,'%H:%i') AS startTime,
-                TIME_FORMAT(b.end_time,'%H:%i') AS endTime,
-                b.hours,
-                b.amount AS total,
-                b.status,
-                b.created_at AS createdAt,
-                l.name AS locationName,
-                s.zone,
-                s.slot_type AS slotType
-            FROM bookings b
-            JOIN vehicles v ON b.vehicle_id=v.vehicle_id
-            JOIN parking_slots s ON b.slot_id=s.slot_id
-            JOIN parking_locations l ON s.parking_location_id=l.parking_location_id
-            WHERE (b.user_id=? OR b.user_id IS NULL) AND b.status='confirmed'
-            ORDER BY b.created_at DESC
-        ");
-        $stmt->execute([$userId]);
-    } else {
-        $stmt = $pdo->query("
-            SELECT
-                b.booking_id AS id,
-                b.slot_id AS slotId,
-                s.parking_location_id AS locationId,
-                b.customer_name AS name,
-                v.vehicle_number AS vehicleNumber,
-                b.booking_date AS date,
-                TIME_FORMAT(b.start_time,'%H:%i') AS startTime,
-                TIME_FORMAT(b.end_time,'%H:%i') AS endTime,
-                b.hours,
-                b.amount AS total,
-                b.status,
-                b.created_at AS createdAt,
-                l.name AS locationName,
-                s.zone,
-                s.slot_type AS slotType
-            FROM bookings b
-            JOIN vehicles v ON b.vehicle_id=v.vehicle_id
-            JOIN parking_slots s ON b.slot_id=s.slot_id
-            JOIN parking_locations l ON s.parking_location_id=l.parking_location_id
-            WHERE b.status='confirmed'
-            ORDER BY b.created_at DESC
-        ");
-    }
+    $stmt = $pdo->query("
+        SELECT
+            b.booking_id AS id,
+            b.slot_id AS slotId,
+            s.parking_location_id AS locationId,
+            b.customer_name AS name,
+            v.vehicle_number AS vehicleNumber,
+            b.booking_date AS date,
+            TIME_FORMAT(b.start_time,'%H:%i') AS startTime,
+            TIME_FORMAT(b.end_time,'%H:%i') AS endTime,
+            b.hours,
+            b.amount AS total,
+            b.status,
+            b.created_at AS createdAt,
+            l.name AS locationName,
+            s.zone,
+            s.slot_type AS slotType
+        FROM bookings b
+        JOIN vehicles v ON b.vehicle_id=v.vehicle_id
+        JOIN parking_slots s ON b.slot_id=s.slot_id
+        JOIN parking_locations l ON s.parking_location_id=l.parking_location_id
+        WHERE b.status='confirmed'
+        ORDER BY b.created_at DESC
+    ");
+
     $rows = $stmt->fetchAll();
     foreach ($rows as &$row) {
         $row["id"] = (int)$row["id"];
@@ -101,15 +73,10 @@ if ($method === "POST") {
     $slot = $stmt->fetch();
     if (!$slot) respond(false, "Parking slot not found", null, 404);
     if ($slot["status"] === "inactive") respond(false, "Parking slot is inactive", null, 409);
+    if ($slot["status"] === "occupied") respond(false, "Parking slot is currently unavailable", null, 409);
 
-    // Current UI uses status for its initial occupied slots.
-    if ($slot["status"] === "occupied") {
-        respond(false, "Parking slot is currently unavailable", null, 409);
-    }
-
-    // Prevent overlapping confirmed bookings for the same slot and date.
     $stmt = $pdo->prepare("
-        SELECT booking_id,start_time,end_time
+        SELECT booking_id
         FROM bookings
         WHERE slot_id=? AND booking_date=? AND status='confirmed'
           AND start_time < ? AND end_time > ?
@@ -120,20 +87,13 @@ if ($method === "POST") {
 
     $pdo->beginTransaction();
     try {
-        $userId = $_SESSION["user_id"] ?? null;
-
-        if ($userId) {
-            $stmt = $pdo->prepare("SELECT vehicle_id FROM vehicles WHERE user_id=? AND vehicle_number=?");
-            $stmt->execute([$userId, $vehicleNumber]);
-        } else {
-            $stmt = $pdo->prepare("SELECT vehicle_id FROM vehicles WHERE user_id IS NULL AND vehicle_number=?");
-            $stmt->execute([$vehicleNumber]);
-        }
+        $stmt = $pdo->prepare("SELECT vehicle_id FROM vehicles WHERE vehicle_number=?");
+        $stmt->execute([$vehicleNumber]);
         $vehicleId = $stmt->fetchColumn();
 
         if (!$vehicleId) {
-            $stmt = $pdo->prepare("INSERT INTO vehicles (user_id,vehicle_number,vehicle_type) VALUES (?,?,?)");
-            $stmt->execute([$userId, $vehicleNumber, $slot["slot_type"]]);
+            $stmt = $pdo->prepare("INSERT INTO vehicles (vehicle_number,vehicle_type) VALUES (?,?)");
+            $stmt->execute([$vehicleNumber, $slot["slot_type"]]);
             $vehicleId = $pdo->lastInsertId();
         }
 
@@ -142,11 +102,11 @@ if ($method === "POST") {
 
         $stmt = $pdo->prepare("
             INSERT INTO bookings
-            (user_id,slot_id,vehicle_id,customer_name,booking_date,start_time,end_time,hours,amount,status)
-            VALUES (?,?,?,?,?,?,?,?,?,'confirmed')
+            (slot_id,vehicle_id,customer_name,booking_date,start_time,end_time,hours,amount,status)
+            VALUES (?,?,?,?,?,?,?,?, 'confirmed')
         ");
         $stmt->execute([
-            $userId, $slotId, $vehicleId, $name, $date,
+            $slotId, $vehicleId, $name, $date,
             $start . ":00", $end . ":00", $hours, $amount
         ]);
 
@@ -176,10 +136,9 @@ if ($method === "PUT" || $method === "DELETE") {
     $bookingId = (int)($data["bookingId"] ?? $data["id"] ?? 0);
     if ($bookingId <= 0) respond(false, "Booking id is required", null, 422);
 
-    $stmt = $pdo->prepare("SELECT booking_id,slot_id,status FROM bookings WHERE booking_id=?");
+    $stmt = $pdo->prepare("SELECT booking_id,status FROM bookings WHERE booking_id=?");
     $stmt->execute([$bookingId]);
-    $booking = $stmt->fetch();
-    if (!$booking) respond(false, "Booking not found", null, 404);
+    if (!$stmt->fetch()) respond(false, "Booking not found", null, 404);
 
     if ($method === "PUT") {
         $newStatus = $data["status"] ?? "";
@@ -190,17 +149,9 @@ if ($method === "PUT" || $method === "DELETE") {
         $newStatus = "cancelled";
     }
 
-    $pdo->beginTransaction();
-    try {
-        $stmt = $pdo->prepare("UPDATE bookings SET status=? WHERE booking_id=?");
-        $stmt->execute([$newStatus, $bookingId]);
-
-        $pdo->commit();
-        respond(true, $method === "DELETE" ? "Booking cancelled successfully" : "Booking status updated");
-    } catch (Throwable $e) {
-        if ($pdo->inTransaction()) $pdo->rollBack();
-        respond(false, "Could not update booking", null, 500);
-    }
+    $stmt = $pdo->prepare("UPDATE bookings SET status=? WHERE booking_id=?");
+    $stmt->execute([$newStatus, $bookingId]);
+    respond(true, $method === "DELETE" ? "Booking cancelled successfully" : "Booking status updated");
 }
 
 respond(false, "Method not allowed", null, 405);

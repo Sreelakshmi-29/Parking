@@ -6,17 +6,6 @@ DROP TABLE IF EXISTS bookings;
 DROP TABLE IF EXISTS vehicles;
 DROP TABLE IF EXISTS parking_slots;
 DROP TABLE IF EXISTS parking_locations;
-DROP TABLE IF EXISTS users;
-
-CREATE TABLE users (
-    user_id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(150) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    phone VARCHAR(20) NULL,
-    role ENUM('user','admin') NOT NULL DEFAULT 'user',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
 
 CREATE TABLE parking_locations (
     parking_location_id VARCHAR(30) PRIMARY KEY,
@@ -41,18 +30,13 @@ CREATE TABLE parking_slots (
 
 CREATE TABLE vehicles (
     vehicle_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NULL,
-    vehicle_number VARCHAR(30) NOT NULL,
+    vehicle_number VARCHAR(30) NOT NULL UNIQUE,
     vehicle_type ENUM('Car','Bike','EV') NOT NULL DEFAULT 'Car',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_vehicle_user
-        FOREIGN KEY (user_id) REFERENCES users(user_id)
-        ON UPDATE CASCADE ON DELETE SET NULL
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
 CREATE TABLE bookings (
     booking_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NULL,
     slot_id INT NOT NULL,
     vehicle_id INT NOT NULL,
     customer_name VARCHAR(100) NOT NULL,
@@ -63,9 +47,6 @@ CREATE TABLE bookings (
     amount DECIMAL(10,2) NOT NULL,
     status ENUM('confirmed','cancelled','completed') NOT NULL DEFAULT 'confirmed',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_booking_user
-        FOREIGN KEY (user_id) REFERENCES users(user_id)
-        ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_booking_slot
         FOREIGN KEY (slot_id) REFERENCES parking_slots(slot_id)
         ON UPDATE CASCADE ON DELETE RESTRICT,
@@ -91,7 +72,6 @@ INSERT INTO parking_slots
 (6,'mall','B','Car',40,'available'),
 (7,'mall','C','EV',60,'available'),
 (8,'mall','C','Bike',15,'available'),
-
 (11,'stadium','A','Car',40,'occupied'),
 (12,'stadium','A','Car',40,'available'),
 (13,'stadium','A','EV',60,'available'),
@@ -100,7 +80,6 @@ INSERT INTO parking_slots
 (16,'stadium','B','Car',40,'occupied'),
 (17,'stadium','C','EV',60,'available'),
 (18,'stadium','C','Bike',15,'available'),
-
 (21,'airport','A','Car',40,'available'),
 (22,'airport','A','Car',40,'available'),
 (23,'airport','A','EV',60,'occupied'),
@@ -109,7 +88,6 @@ INSERT INTO parking_slots
 (26,'airport','B','Car',40,'available'),
 (27,'airport','C','EV',60,'available'),
 (28,'airport','C','Bike',15,'occupied'),
-
 (31,'hospital','A','Car',40,'available'),
 (32,'hospital','A','Car',40,'occupied'),
 (33,'hospital','A','EV',60,'available'),

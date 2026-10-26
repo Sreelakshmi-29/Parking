@@ -6,7 +6,6 @@ $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 $allowedOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000', 'http://127.0.0.1:3000'];
 if (in_array($origin, $allowedOrigins, true)) {
     header("Access-Control-Allow-Origin: $origin");
-    header("Access-Control-Allow-Credentials: true");
 }
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
@@ -40,10 +39,6 @@ try {
     exit;
 }
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
 function jsonInput(): array {
     $raw = file_get_contents("php://input");
     if (!$raw) return [];
@@ -58,15 +53,4 @@ function respond(bool $success, string $message = "", $data = null, int $status 
     if ($data !== null) $response["data"] = $data;
     echo json_encode($response);
     exit;
-}
-
-function requireLogin(): int {
-    if (empty($_SESSION["user_id"])) {
-        respond(false, "Please login first", null, 401);
-    }
-    return (int) $_SESSION["user_id"];
-}
-
-function validateEmail(string $email): bool {
-    return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
 }
